@@ -1,0 +1,119 @@
+from zad2.Fraction import Fraction
+
+
+def horners_method(_coefficients, fraction):
+    new_coefficients = [_coefficients[0]]
+    print(new_coefficients[0].numerator, "/", new_coefficients[0].denominator, end=" ")
+    for i in range(1, len(_coefficients) - 1):
+        new_coefficients.append(Fraction(fraction.numerator, fraction.denominator))
+        new_coefficients[i].multiply_by_fraction(new_coefficients[i-1])
+        new_coefficients[i].add_fraction(_coefficients[i])
+        print(new_coefficients[i].numerator, "/", new_coefficients[i].denominator, end=" ")
+    print("")
+    return new_coefficients
+
+
+def check_if_equals_zero(_coefficients, fraction):
+    sum = Fraction(0, 0)
+    power = 0
+    for i in reversed(_coefficients):
+        x = Fraction(fraction.numerator, fraction.denominator)
+        x.to_power(power)
+        power += 1
+        x.multiply_by_fraction(i)
+        sum.add_fraction(x)
+    if sum.equal(Fraction(0, 0)):
+        return True
+    return False
+
+
+def calculate_solution(_coefficients):
+    # lista na znalezione pierwiastki
+    solutions = []
+
+    # lista krotnosci poszczególnych pierwiastków
+    fold = []
+
+    # lista na dzielniki a_0
+    p = []
+    constant = abs(_coefficients[-1])
+    if constant == 0:
+        print("cant solve if there is no constant.")
+        return solutions, fold
+    for i in range(1, constant+1):
+        if constant % i == 0:
+            p.append(i)
+            p.append(-i)
+    print("p: ", p)
+
+    # lista na dzielniki a_n
+    q = []
+    first_coefficient = abs(_coefficients[0])
+    for i in range(1, first_coefficient+1):
+        if first_coefficient % i == 0:
+            q.append(i)
+            q.append(-i)
+    print("q: ", q)
+
+    # zbiór ułamków p/q
+    p_q_set = set()
+    for i in p:
+        for j in q:
+            if i < 0 and j < 0:
+                p_q_set.add((abs(i), abs(j)))
+            elif i > 0 > j:
+                p_q_set.add((-i, abs(j)))
+            else:
+                p_q_set.add((i, j))
+    print("p_q_set: ", p_q_set)
+    p_q_list = []
+
+    # przepisywanie zbioru ułamków na liste obiektów fraction ze sprawdzeniem czy się nie powtarzają
+    for p_q in p_q_set:
+        flag = True
+        x = Fraction(p_q[0], p_q[1])
+        i = len(p_q_list) - 1
+        while i >= 0 and flag:
+            if p_q_list[i].equal(x):
+                flag = False
+            i -= 1
+        if flag:
+            p_q_list.append(x)
+
+    for p_q in p_q_list:
+        print("(", p_q.numerator, "/", p_q.denominator, ")", end=", ")
+    print("")
+
+    new_coefficients = []
+    for coefficient in _coefficients:
+        new_coefficients.append(Fraction(coefficient, 1))
+
+    # wyliczanie pierwiastków
+    while p_q_list:
+        for i in range(len(p_q_list) - 1, -1, -1):
+            if check_if_equals_zero(new_coefficients, p_q_list[i]):
+                new_coefficients = horners_method(new_coefficients, p_q_list[i])
+                to_be_added = True
+                for j in range(len(solutions)):
+                    if solutions[j].equal(p_q_list[i]):
+                        to_be_added = False
+                        fold[j] += 1
+                if to_be_added:
+                    fold.append(1)
+                    solutions.append(p_q_list[i])
+            else:
+                p_q_list.pop(i)
+    return solutions, fold
+
+
+coefficients = [2, -6, 4]
+
+s, f = calculate_solution(coefficients)
+if not s:
+    print("No solutions were found")
+else:
+    print("Found solutions:")
+    for i in range(len(s)):
+        print(f[i], "x (", s[i].numerator, "/", s[i].denominator, ")", end=", ")
+
+# print(check_if_equals_zero(coefficients, Fraction(2, 1)))
